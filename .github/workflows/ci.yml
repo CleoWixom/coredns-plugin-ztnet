@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: ["master", "develop"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: .go-version
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m ./plugin/ztnet/...
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ["1.25", "1.26"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Verify go.sum is tidy
+        run: go mod tidy && git diff --exit-code go.sum
+
+      - name: Vet plugin package
+        run: go vet ./plugin/ztnet/...
+
+      - name: Test with race detector
+        run: go test -race -coverprofile=coverage-${{ matrix.go-version }}.out ./plugin/ztnet/...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-go${{ matrix.go-version }}
+          path: coverage-${{ matrix.go-version }}.out
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: .go-version
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Register ztnet in plugin.cfg (if not already present)
+        run: |
+          grep -qF 'ztnet:' plugin.cfg || \
+            sed -i '/^hosts:hosts/a ztnet:github.com/CleoWixom/coredns-plugin-ztnet/plugin/ztnet' \
+              plugin.cfg
+
+      - name: Generate plugin list
+        run: go generate
+
+      - name: Build CoreDNS binary with ztnet plugin
+        run: go build -trimpath -o coredns .
+
+      - name: Smoke test – binary includes ztnet
+        run: ./coredns -plugins | grep -w ztnet
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: coredns-ztnet-linux-amd64
+          path: coredns
+          retention-days: 14
