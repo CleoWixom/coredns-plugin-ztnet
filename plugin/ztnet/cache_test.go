@@ -35,16 +35,16 @@ func TestCacheConcurrentReplaceLookup(t *testing.T) {
 	rc.Replace(map[string][]net.IP{"host.example.": {net.ParseIP("10.0.0.1")}})
 
 	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
 			_, _ = rc.Lookup("host.example.")
 		}()
-		go func(i int) {
+		go func() {
 			defer wg.Done()
 			rc.Replace(map[string][]net.IP{"host.example.": {net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")}})
-		}(i)
+		}()
 	}
 	wg.Wait()
 }

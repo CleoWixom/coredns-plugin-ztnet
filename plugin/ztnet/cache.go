@@ -73,9 +73,7 @@ func (rc *RecordCache) refresh(ctx context.Context, c *Client, cfg *Config) erro
 			names := []string{member.Name + "." + nz.Zone, member.ID + "." + nz.Zone}
 			for _, name := range names {
 				fqdn := strings.ToLower(strings.TrimSuffix(name, ".") + ".")
-				for _, ip := range member.IPs {
-					records[fqdn] = append(records[fqdn], ip)
-				}
+				records[fqdn] = append(records[fqdn], member.IPs...)
 				if netInfo.RFC4193 {
 					ip, err := RFC4193(nz.NetworkID, member.ID)
 					if err != nil {

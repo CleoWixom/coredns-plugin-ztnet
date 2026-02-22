@@ -86,7 +86,7 @@ func (c *Client) GetMembers(ctx context.Context, networkID string) ([]Member, er
 	return members, nil
 }
 
-func (c *Client) getJSON(ctx context.Context, url string, dst interface{}) error {
+func (c *Client) getJSON(ctx context.Context, url string, dst any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err

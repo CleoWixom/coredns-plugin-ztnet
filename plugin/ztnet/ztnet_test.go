@@ -9,6 +9,7 @@ import (
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/test"
+
 	"github.com/miekg/dns"
 )
 
@@ -93,7 +94,9 @@ func TestServeDNSOutsideZoneFallthrough(t *testing.T) {
 	z.Next = plugin.HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 		m := new(dns.Msg)
 		m.SetReply(r)
-		_ = w.WriteMsg(m)
+		if err := w.WriteMsg(m); err != nil {
+			return dns.RcodeServerFailure, err
+		}
 		return dns.RcodeSuccess, nil
 	})
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
