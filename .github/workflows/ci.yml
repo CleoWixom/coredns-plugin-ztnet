@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: ["1.25", "1.26"]
+        go-version: ["1.25"]
 
     steps:
       - uses: actions/checkout@v4
@@ -69,8 +69,8 @@ jobs:
 
       - name: Register ztnet in plugin.cfg (if not already present)
         run: |
-          grep -qF 'ztnet:' plugin.cfg || \
-            sed -i '/^hosts:hosts/a ztnet:github.com/CleoWixom/coredns-plugin-ztnet/plugin/ztnet' \
+          grep -qF 'ztnet:ztnet' plugin.cfg || \
+            sed -i '/^hosts:hosts/a ztnet:ztnet' \
               plugin.cfg
 
       - name: Generate plugin list

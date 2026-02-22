@@ -41,7 +41,9 @@ func (z *ZTNet) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 		m := new(dns.Msg)
 		m.SetReply(r)
 		m.Authoritative = true
-		_ = w.WriteMsg(m)
+		if err := w.WriteMsg(m); err != nil {
+			return dns.RcodeServerFailure, err
+		}
 		return dns.RcodeSuccess, nil
 	}
 

@@ -13,10 +13,12 @@ func TestGetMembersFiltersAndNormalizes(t *testing.T) {
 			t.Fatalf("unexpected path %s", r.URL.Path)
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`[
+		if _, err := w.Write([]byte(`[
 			{"id":"efcc1b0947","name":"node one","authorized":true,"ipAssignments":["10.0.0.2","fc00::1"]},
 			{"id":"deadbeef00","name":"ignored","authorized":false,"ipAssignments":["10.0.0.3"]}
-		]`))
+		]`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	defer ts.Close()
 
@@ -39,7 +41,9 @@ func TestGetMembersFiltersAndNormalizes(t *testing.T) {
 func TestGetNetworkInfo(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"v6AssignMode":{"6plane":true,"rfc4193":false}}`))
+		if _, err := w.Write([]byte(`{"v6AssignMode":{"6plane":true,"rfc4193":false}}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	defer ts.Close()
 
