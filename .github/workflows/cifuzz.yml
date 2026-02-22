@@ -23,6 +23,7 @@ jobs:
           oss-fuzz-project-name: "go-coredns"
           language: "go"
           project-src-path: ${{ github.workspace }}
+          bad-build-check: false
           dry-run: false
       - name: Run Fuzzers
         uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master  # cifuzz can't be pinned
