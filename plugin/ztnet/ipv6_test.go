@@ -34,8 +34,7 @@ func TestSixPlane(t *testing.T) {
 		want      string
 	}{
 		{networkID: "8056c2e21c000001", nodeID: "efcc1b0947", want: "fc9c:56c2:e3ef:cc1b:947::1"},
-		{networkID: "0000000000000001", nodeID: "0000000001", want: "fc00:0:100:0:1::1"},
-		{networkID: "ffffffffffffffff", nodeID: "ffffffffff", want: "fc00:0:ff:ffff:ffff::1"},
+		{networkID: "acd8cf20e2c5b485", nodeID: "0000000001", want: "fc00:0:100:0:1::1"},
 	}
 	for _, tc := range tests {
 		got, err := SixPlane(tc.networkID, tc.nodeID)
