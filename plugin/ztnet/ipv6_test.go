@@ -13,6 +13,7 @@ func TestRFC4193(t *testing.T) {
 	}{
 		{networkID: "8056c2e21c000001", nodeID: "efcc1b0947", want: "fd80:56c2:e21c:0:199:93ef:cc1b:947"},
 		{networkID: "0000000000000001", nodeID: "0000000001", want: "fd00::199:9300:0:1"},
+		{networkID: "ffffffffffffffff", nodeID: "ffffffffff", want: "fdff:ffff:ffff:ffff:ff99:93ff:ffff:ffff"},
 	}
 	for _, tc := range tests {
 		got, err := RFC4193(tc.networkID, tc.nodeID)
@@ -33,7 +34,7 @@ func TestSixPlane(t *testing.T) {
 		want      string
 	}{
 		{networkID: "8056c2e21c000001", nodeID: "efcc1b0947", want: "fc9c:56c2:e3ef:cc1b:947::1"},
-		{networkID: "0000000000000001", nodeID: "0000000001", want: "fc00:0:100:0:1::1"},
+		{networkID: "acd8cf20e2c5b485", nodeID: "0000000001", want: "fc00:0:100:0:1::1"},
 	}
 	for _, tc := range tests {
 		got, err := SixPlane(tc.networkID, tc.nodeID)
@@ -47,11 +48,14 @@ func TestSixPlane(t *testing.T) {
 	}
 }
 
-func TestIPv6InvalidLength(t *testing.T) {
-	if _, err := RFC4193("short", "efcc1b0947"); err == nil {
+func TestIPv6InvalidInput(t *testing.T) {
+	if _, err := RFC4193("", "efcc1b0947"); err == nil {
 		t.Fatal("expected error for invalid networkID length")
 	}
-	if _, err := SixPlane("8056c2e21c000001", "short"); err == nil {
+	if _, err := SixPlane("8056c2e21c000001", ""); err == nil {
 		t.Fatal("expected error for invalid nodeID length")
+	}
+	if _, err := RFC4193("8056c2e21c00000Z", "efcc1b0947"); err == nil {
+		t.Fatal("expected error for invalid networkID hex")
 	}
 }

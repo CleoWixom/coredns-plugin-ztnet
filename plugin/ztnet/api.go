@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // Client communicates with the ZTNET REST API.
@@ -18,7 +19,17 @@ type Client struct {
 
 // NewClient returns a Client with DefaultHTTPTimeout set.
 func NewClient(baseURL, token string) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, httpClient: &http.Client{Timeout: DefaultHTTPTimeout}}
+	return &Client{
+		baseURL: strings.TrimRight(baseURL, "/"),
+		token:   token,
+		httpClient: &http.Client{
+			Timeout: DefaultHTTPTimeout,
+			Transport: &http.Transport{
+				MaxIdleConnsPerHost: 2,
+				IdleConnTimeout:     90 * time.Second,
+			},
+		},
+	}
 }
 
 // NetworkInfo holds v6 assignment mode flags.

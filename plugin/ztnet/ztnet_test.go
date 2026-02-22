@@ -15,9 +15,10 @@ import (
 
 func newPlugin() *ZTNet {
 	rc := &RecordCache{}
-	rc.Replace(map[string][]net.IP{
-		"node.home.lan.": {net.ParseIP("10.0.0.2"), net.ParseIP("fc00::1")},
-	})
+	rc.Replace(
+		map[string][]net.IP{"node.home.lan.": {net.ParseIP("10.0.0.2")}},
+		map[string][]net.IP{"node.home.lan.": {net.ParseIP("fc00::1"), net.ParseIP("fc00::2")}},
+	)
 	return &ZTNet{Config: &Config{Networks: []NetworkZone{{Zone: "home.lan.", NetworkID: "8056c2e21c000001"}}, DNSTTL: 30 * time.Second}, Cache: rc}
 }
 
@@ -36,6 +37,11 @@ func TestServeDNSA(t *testing.T) {
 	if !rec.Msg.Authoritative {
 		t.Fatal("expected AA=true")
 	}
+	for _, rr := range rec.Msg.Answer {
+		if rr.Header().Rrtype != dns.TypeA {
+			t.Fatalf("expected only A records, got %v", rr.Header().Rrtype)
+		}
+	}
 }
 
 func TestServeDNSAAAA(t *testing.T) {
@@ -47,8 +53,13 @@ func TestServeDNSAAAA(t *testing.T) {
 	if err != nil || rcode != dns.RcodeSuccess {
 		t.Fatalf("rcode=%d err=%v", rcode, err)
 	}
-	if len(rec.Msg.Answer) != 1 || rec.Msg.Answer[0].Header().Rrtype != dns.TypeAAAA {
-		t.Fatalf("unexpected answer %#v", rec.Msg.Answer)
+	if len(rec.Msg.Answer) != 2 {
+		t.Fatalf("expected 2 AAAA records, got %#v", rec.Msg.Answer)
+	}
+	for _, rr := range rec.Msg.Answer {
+		if rr.Header().Rrtype != dns.TypeAAAA {
+			t.Fatalf("expected only AAAA records, got %v", rr.Header().Rrtype)
+		}
 	}
 }
 
@@ -105,5 +116,12 @@ func TestServeDNSOutsideZoneFallthrough(t *testing.T) {
 	rcode, err := z.ServeDNS(context.Background(), rec, m)
 	if err != nil || rcode != dns.RcodeSuccess {
 		t.Fatalf("rcode=%d err=%v", rcode, err)
+	}
+}
+
+func TestLongestSuffixMatch(t *testing.T) {
+	z := &ZTNet{Config: &Config{Networks: []NetworkZone{{Zone: "b.c.", NetworkID: "1"}, {Zone: "a.b.c.", NetworkID: "2"}}}}
+	if !z.matchesZone("x.a.b.c.") {
+		t.Fatal("expected zone match")
 	}
 }

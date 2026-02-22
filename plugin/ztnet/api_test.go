@@ -15,6 +15,8 @@ func TestGetMembersFiltersAndNormalizes(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte(`[
 			{"id":"efcc1b0947","name":"node one","authorized":true,"ipAssignments":["10.0.0.2","fc00::1"]},
+			{"id":"efcc1b0948","name":"node two","authorized":true,"ipAssignments":[]},
+			{"id":"efcc1b0949","name":"node three","authorized":true,"ipAssignments":["invalid"]},
 			{"id":"deadbeef00","name":"ignored","authorized":false,"ipAssignments":["10.0.0.3"]}
 		]`)); err != nil {
 			t.Fatalf("write response: %v", err)
@@ -27,14 +29,20 @@ func TestGetMembersFiltersAndNormalizes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetMembers error: %v", err)
 	}
-	if len(members) != 1 {
-		t.Fatalf("want 1 member, got %d", len(members))
+	if len(members) != 3 {
+		t.Fatalf("want 3 authorized members, got %d", len(members))
 	}
 	if members[0].Name != "node_one" {
 		t.Fatalf("want normalized name node_one, got %q", members[0].Name)
 	}
 	if len(members[0].IPs) != 1 || members[0].IPs[0].String() != "10.0.0.2" {
 		t.Fatalf("unexpected IP list %#v", members[0].IPs)
+	}
+	if len(members[1].IPs) != 0 {
+		t.Fatalf("expected empty IP list, got %#v", members[1].IPs)
+	}
+	if len(members[2].IPs) != 0 {
+		t.Fatalf("expected empty IP list for invalid assignment, got %#v", members[2].IPs)
 	}
 }
 

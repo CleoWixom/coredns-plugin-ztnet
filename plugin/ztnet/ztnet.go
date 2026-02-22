@@ -53,19 +53,35 @@ func (z *ZTNet) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	m.Authoritative = true
 	ttl := uint32(z.Config.DNSTTL.Seconds())
 
-	ips, ok := z.Cache.Lookup(qname)
-	if ok {
-		for _, ip := range ips {
-			switch state.QType() {
-			case dns.TypeA:
-				if ip4 := ip.To4(); ip4 != nil {
-					m.Answer = append(m.Answer, &dns.A{Hdr: dns.RR_Header{Name: qname, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl}, A: ip4})
+	switch state.QType() {
+	case dns.TypeA:
+		ips, ok := z.Cache.LookupA(qname)
+		if ok {
+			answers := make([]dns.RR, 0, len(ips))
+			for _, ip := range ips {
+				ip4 := ip.To4()
+				if ip4 == nil {
+					continue
 				}
-			case dns.TypeAAAA:
-				if ip.To4() == nil && ip.To16() != nil {
-					m.Answer = append(m.Answer, &dns.AAAA{Hdr: dns.RR_Header{Name: qname, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: ttl}, AAAA: ip})
-				}
+				answers = append(answers, &dns.A{Hdr: dns.RR_Header{Name: qname, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl}, A: ip4})
 			}
+			m.Answer = answers
+		}
+	case dns.TypeAAAA:
+		ips, ok := z.Cache.LookupAAAA(qname)
+		if ok {
+			answers := make([]dns.RR, 0, len(ips))
+			for _, ip := range ips {
+				if ip.To4() != nil {
+					continue
+				}
+				ip16 := ip.To16()
+				if ip16 == nil {
+					continue
+				}
+				answers = append(answers, &dns.AAAA{Hdr: dns.RR_Header{Name: qname, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: ttl}, AAAA: ip16})
+			}
+			m.Answer = answers
 		}
 	}
 

@@ -19,9 +19,9 @@ func RFC4193(networkID, nodeID string) (net.IP, error) {
 	ip[8] = nw[7]
 	ip[9] = 0x99
 	ip[10] = 0x93
-	ip[11] = id[0]
-	copy(ip[12:14], id[1:3])
-	copy(ip[14:16], id[3:5])
+	copy(ip[11:13], id[0:2])
+	copy(ip[13:15], id[2:4])
+	ip[15] = id[4]
 	return ip, nil
 }
 
